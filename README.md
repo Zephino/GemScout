@@ -29,7 +29,7 @@ A 2D side-scrolling cave platformer. Explore a cave, collect **every gem** to un
 - **Puzzles and hazards:** red, blue and yellow doors open with the lever of the same colour; crystal beams hurt until you turn them off with their switch; spikes on the floor hurt. Every lever and switch is always reachable before you need it, and spikes never block the only way.
 - **Power-ups:** Power shot (shots go through enemies and break a Bouldermaw at once, 15 s), Reverse gravity (walk on ceilings, 10 s), Freeze (enemies stop and can't hurt you, 10 s), Shield (your next hit is free).
 - Score: 100 per gem, +500 if you weren't hurt, and +5 for every second faster than par (20 seconds per gem). Each difficulty has its own leaderboard.
-- Leaving or restarting a cave throws away that cave's progress.
+- Leaving or restarting a cave throws away that cave's progress. If you ever get stuck, Pause → **I'm stuck** puts you back on safe ground and keeps your gems.
 - On phones, turn sideways for see-through buttons over the game, or hold it upright for a control panel below the game. The buttons only show on touch screens (Settings → Touch controls).
 
 ## Online features

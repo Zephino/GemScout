@@ -32,6 +32,12 @@ func test_every_cave_can_be_finished() -> void:
 			check(result.safe.has(g), "seed %d: gem at %s reachable" % [seed, g])
 		check(not cave.gems.has(cave.start), "seed %d: no gem on the start" % seed)
 		check(cave.attempt < CaveGenerator.MAX_ATTEMPTS, "seed %d: a real layout, not the fallback" % seed)
+		var gaps: int = 0
+		for y in range(1, cave.height - 1):
+			for x in range(1, cave.width - 1):
+				if not cave.is_solid(x, y) and cave.is_solid(x - 1, y) and cave.is_solid(x + 1, y):
+					gaps += 1
+		check_eq(gaps, 0, "seed %d: no gaps one cell wide (the scout could wedge in one)" % seed)
 	attempts.sort()
 	print("    attempts needed: median %d, worst %d; slowest cave %d ms" % [attempts[attempts.size() / 2], attempts[-1], slowest])
 

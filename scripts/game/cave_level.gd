@@ -381,6 +381,17 @@ func _watch_safety(delta: float) -> void:
 
 # --- Actions ------------------------------------------------------------------
 
+## Pause → "I'm stuck": back to the last safe spot, keeping the gems.
+func unstick() -> void:
+	if finished or dead:
+		return
+	gravity_left = 0.0
+	hero.set_reverse_gravity(false)
+	hero.place(CaveData.feet_position(_last_safe))
+	hero.invulnerable_left = Hero.HURT_INVULNERABLE_S
+	message.emit("Back to safe ground.")
+
+
 func shoot() -> void:
 	if finished or dead or _cooldown > 0.0:
 		return

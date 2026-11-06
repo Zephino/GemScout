@@ -10,7 +10,8 @@ extends RefCounted
 ## floating ledges. Shafts have ledges exactly 5 rows apart to climb back up.
 ##
 ## Steps: plan every floor (random walk, flat chambers, flat shaft bottoms),
-## limit steps to 2 cells, carve, add ledges and decorations, then check the
+## limit steps to 2 cells, carve, add ledges and decorations, fill gaps one
+## cell wide (the scout could get wedged in them), then check the
 ## result with Reachability, then add doors, beams, spikes, enemies and
 ## pickups (CaveFeatures, which checks they're fair). If any spot the scout can reach can't get back
 ## to the start, or there aren't enough spots for gems, the next try (same
@@ -20,7 +21,7 @@ extends RefCounted
 ## Change VERSION whenever a change here would draw a different cave for the
 ## same seed (old leaderboard seeds then show "made with an older version").
 
-const VERSION := 2
+const VERSION := 3
 const WIDTH := 144
 const HEIGHT := 72
 const TIERS := 3
@@ -89,6 +90,7 @@ func _try(seed: int, attempt: int, plain: bool = false) -> CaveData:
 		_add_chamber_ledges(tier)
 	if not plain:
 		_decorate()
+	_fill_narrow_gaps()
 	_cave.start = _stand_near(4, 0)
 	if _cave.start.x < 0:
 		return null
@@ -290,6 +292,22 @@ func _decorate() -> void:
 			if fl - 1 - y >= 10 and _pinned[tier][x] == 0:
 				for dy in range(1, _rng.randi_range(1, 2) + 1):
 					_cave.set_solid(x, y + dy, true)
+
+
+## Fills every gap one cell wide (rock on both sides). Reachability treats
+## the scout as two cells wide and ignores such gaps, but the real scout is
+## narrower and could drop into one and get wedged (for example between a
+## shaft's ledge and the cave wall, where tunnels are dug one cell wider than
+## shafts). Repeats until none are left, since filling can make new ones.
+func _fill_narrow_gaps() -> void:
+	var changed: bool = true
+	while changed:
+		changed = false
+		for y in range(1, HEIGHT - 1):
+			for x in range(1, WIDTH - 1):
+				if not _cave.is_solid(x, y) and _cave.is_solid(x - 1, y) and _cave.is_solid(x + 1, y):
+					_cave.set_solid(x, y, true)
+					changed = true
 
 
 ## The first standing cell from column `x` rightwards in the given tier.

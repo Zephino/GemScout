@@ -137,7 +137,9 @@ func pause() -> void:
 		return
 	get_tree().paused = true
 	_touch.set_shown(false)
-	_show(PauseMenu.new(_seed, resume, func() -> void: start_cave(_seed, _difficulty), show_title).root)
+	_show(PauseMenu.new(_seed, resume, func() -> void: start_cave(_seed, _difficulty), show_title, func() -> void:
+		resume()
+		_level.unstick()).root)
 
 
 func resume() -> void:

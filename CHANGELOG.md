@@ -2,6 +2,26 @@
 
 One entry per change request, newest first (see `.cursor/rules/changelog.mdc`). The version here always matches `VERSION`. Times are US Eastern.
 
+## Version 00.01.04
+Date: 11/06/2026
+Time: 1:43 AM
+
+### Changes
+- **Fixed: getting stuck in a gap you couldn't jump or walk out of.** Tunnels were dug one cell wider than shafts, which left a one-cell (8 px) gap between a shaft's climbing ledge and the cave wall.
+  - The ledge's rounded end and the wall made a funnel narrower than the scout. The scout jammed in it: not standing, so no jump, and walking only pushed into rock.
+  - The cave check missed it because it treats the scout as two cells wide and assumes such gaps can't be entered.
+  - The generator now fills every gap one cell wide when it makes a cave. It's now version 3, so seeds make slightly different caves than before.
+- **New Pause → "I'm stuck"** puts you back on the last safe spot and keeps your gems, as a backstop for anything unforeseen.
+- **New tests:**
+  - No cave has a one-cell gap.
+  - With real physics, the scout is dropped beside every ledge end in three caves and must never end up jammed.
+    - This test finds the wedge spots in the old generator, including the one reproduced from the report, and none in the new one.
+  - "I'm stuck" returns you to safe ground with your gems.
+- The test runner can run a single test file: `-- --only=test_name`.
+
+### Reason
+The owner reported getting stuck in a gap the scout could fall into but not jump or walk out of, and approved this fix.
+
 ## Version 00.01.03
 Date: 11/06/2026
 Time: 1:08 AM

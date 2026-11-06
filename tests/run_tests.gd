@@ -2,6 +2,7 @@ extends SceneTree
 ## Runs every tests/test_*.gd file headless and prints a summary:
 ##
 ##   godot --headless --path . -s tests/run_tests.gd
+##   godot --headless --path . -s tests/run_tests.gd -- --only=test_combat   (one file)
 ##
 ## Each test file extends TestCase; every method starting with "test_" runs.
 ## Exits with code 1 if any check failed, so CI can see it.
@@ -10,9 +11,13 @@ extends SceneTree
 func _initialize() -> void:
 	var failed: int = 0
 	var passed: int = 0
+	var only: String = ""
+	for arg: String in OS.get_cmdline_user_args():
+		if arg.begins_with("--only="):
+			only = arg.trim_prefix("--only=")
 	var files: Array[String] = []
 	for f in DirAccess.get_files_at("res://tests"):
-		if f.begins_with("test_") and f.ends_with(".gd"):
+		if f.begins_with("test_") and f.ends_with(".gd") and (only == "" or f.begins_with(only)):
 			files.append(f)
 	files.sort()
 	for f in files:
