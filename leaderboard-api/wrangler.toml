@@ -1,0 +1,36 @@
+name = "gemscout"
+workers_dev = true
+main = "src/index.js"
+compatibility_date = "2024-10-01"
+
+# KV namespace "GemScout" (created in Cloudflare), bound as LEADERBOARD_KV:
+# the leaderboard's fast copy plus rate-limit counters.
+[[kv_namespaces]]
+binding = "LEADERBOARD_KV"
+id = "cbd3558ef91f45c4a7ae795660d69ffe"
+
+# Durable Objects (SQLite-backed, available on the free plan): one SaveVault
+# per player's cloud save, one AccountVault per Google account or sign-in in progress.
+[[durable_objects.bindings]]
+name = "SAVE_VAULT"
+class_name = "SaveVault"
+
+[[durable_objects.bindings]]
+name = "ACCOUNTS"
+class_name = "AccountVault"
+
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["SaveVault", "AccountVault"]
+
+[vars]
+GITHUB_OWNER = "Zephino"
+GITHUB_REPO = "GemScout"
+GITHUB_PATH = "leaderboard.json"
+GITHUB_BRANCH = "data"
+
+# Secrets are never written here (Cloudflare dashboard → Workers & Pages →
+# gemscout → Settings → Variables and Secrets, type "Secret"):
+#   GITHUB_TOKEN          leaderboard + suggestions (Contents and Issues: Read and write, Zephino/GemScout only)
+#   GOOGLE_CLIENT_ID      Sign in with Google
+#   GOOGLE_CLIENT_SECRET

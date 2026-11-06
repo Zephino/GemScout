@@ -1,0 +1,15 @@
+{
+  "name": "gemscout-leaderboard-api",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Cloudflare Worker for GemScout: leaderboard (data branch), cloud saves, Sign in with Google, suggestions",
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "test": "node --test test/*.test.js"
+  },
+  "devDependencies": {
+    "wrangler": "^3.90.0"
+  }
+}

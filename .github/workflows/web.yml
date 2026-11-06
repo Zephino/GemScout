@@ -1,0 +1,102 @@
+# Builds the playable web version on every push to main and publishes it to
+# GitHub Pages: https://zephino.github.io/GemScout/
+# The automated tests (game and online service) run first; their results are
+# in the "Run game tests" and "Test the online service" steps' logs. A failing
+# test stops the publish, so a broken game never goes live.
+#
+# One-time setting: Settings → Pages → Build and deployment → Source =
+# "GitHub Actions" (otherwise GitHub publishes the repository's files instead).
+name: Web build
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+env:
+  GODOT_VERSION: "4.7.2"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Test the online service
+        working-directory: leaderboard-api
+        run: node --test test/*.test.js
+
+      - name: Install Godot and web export templates
+        run: |
+          base="https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}-stable"
+          curl -sSL -o godot.zip "$base/Godot_v${GODOT_VERSION}-stable_linux.x86_64.zip"
+          curl -sSL -o templates.tpz "$base/Godot_v${GODOT_VERSION}-stable_export_templates.tpz"
+          unzip -q godot.zip
+          mv "Godot_v${GODOT_VERSION}-stable_linux.x86_64" /usr/local/bin/godot
+          templates="$HOME/.local/share/godot/export_templates/${GODOT_VERSION}.stable"
+          mkdir -p "$templates"
+          unzip -q templates.tpz -d /tmp/templates
+          mv /tmp/templates/templates/* "$templates/"
+          rm -f godot.zip templates.tpz
+
+      - name: Import project
+        run: godot --headless --import --path . || true
+
+      - name: Run game tests
+        run: godot --headless --path . -s tests/run_tests.gd
+
+      - name: Export web build
+        run: |
+          mkdir -p build/web
+          godot --headless --path . --export-debug "Web" build/web/index.html
+          test -f build/web/index.html
+          # Write the version into the page and add the updater (web/update.js), so
+          # browsers always load matching files and switch to new versions by themselves.
+          v=$(tr -d '[:space:]' < VERSION)
+          cp web/update.js build/web/update.js
+          sed -i "s/__GEMSCOUT_VERSION__/$v/g; s|src=\"index.js\"|src=\"index.js?v=$v\"|" build/web/index.html
+          grep -q "GEMSCOUT_VERSION=\"$v\"" build/web/index.html
+          grep -q "index.js?v=$v" build/web/index.html
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: build/web
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: VERSION
+          sparse-checkout-cone-mode: false
+
+      - id: deployment
+        uses: actions/deploy-pages@v4
+
+      - name: Check the site shows the game
+        run: |
+          url="${{ steps.deployment.outputs.page_url }}"
+          for i in $(seq 1 12); do
+            if curl -sfL --max-time 20 "$url?check=$i" | grep -q "GEMSCOUT_VERSION=\"$(tr -d '[:space:]' < VERSION)\""; then echo "Version $(cat VERSION) is live at $url"; exit 0; fi
+            echo "Not the game yet ($i); waiting for GitHub's cache…"
+            sleep 15
+          done
+          echo "::error::$url doesn't show the game. Re-run this workflow, or set Settings → Pages → Source to GitHub Actions."
+          exit 1

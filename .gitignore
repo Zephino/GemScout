@@ -1,0 +1,23 @@
+# Godot 4 generated files
+.godot/
+/android/
+
+# Export settings that can hold passwords or keys
+export_credentials.cfg
+
+# Builds
+/build/
+/export/
+
+# OS clutter
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Temporary files
+*.tmp
+
+# Local secrets (keys, credentials); never commit
+secrets.local.json
+*.keystore
+.dev.vars
