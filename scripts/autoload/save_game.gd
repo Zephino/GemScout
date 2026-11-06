@@ -5,10 +5,15 @@ extends Node
 ## Saved: the username, settings, and records (best score, fastest clear,
 ## caves cleared, gems collected). The Google sign-in itself (private cloud
 ## code and email) is kept apart, in user://account.cfg, never inside the save.
+##
+## The username exists only while signed in with Google (as in Mythriven): it
+## hides your Google name. Signed out, the leaderboard name is just the name
+## you typed last on this device (user://profile.cfg; never synced).
 
 signal changed
 
 const PATH := "user://save.json"
+const PROFILE_PATH := "user://profile.cfg"
 const SAVE_VERSION := 1
 const MAX_USERNAME := 12
 
@@ -25,7 +30,7 @@ static func _blank() -> Dictionary:
 		"save_version": SAVE_VERSION,
 		"username": "",
 		"username_updated": 0,
-		"settings": {"touch": "auto"},
+		"settings": {"touch": "auto", "difficulty": "medium"},
 		"settings_updated": 0,
 		"records": {"best_score": 0, "best_time_ms": 0, "caves_cleared": 0, "gems_collected": 0},
 	}
@@ -55,6 +60,8 @@ static func sanitize(raw: Dictionary) -> Dictionary:
 	var settings: Variant = raw.get("settings", {})
 	if settings is Dictionary and str(settings.get("touch", "auto")) in ["auto", "on", "off"]:
 		out["settings"]["touch"] = str(settings.get("touch", "auto"))
+	if settings is Dictionary and str(settings.get("difficulty", "medium")) in ["easy", "medium", "hard"]:
+		out["settings"]["difficulty"] = str(settings.get("difficulty", "medium"))
 	out["settings_updated"] = int(raw.get("settings_updated", 0))
 	var records: Variant = raw.get("records", {})
 	if records is Dictionary:
@@ -96,8 +103,36 @@ static func merge(a: Dictionary, b: Dictionary) -> Dictionary:
 	return out
 
 
+## The username, only while signed in with Google ("" otherwise).
 func username() -> String:
+	var cloud: Node = get_node_or_null("/root/Cloud")
+	if cloud == null or not cloud.signed_in():
+		return ""
 	return str(data.get("username", ""))
+
+
+## The name to put on a leaderboard score: the username when signed in,
+## otherwise the name typed last time on this device.
+func leaderboard_name() -> String:
+	var name: String = username()
+	if name != "":
+		return name
+	var cfg := ConfigFile.new()
+	cfg.load(PROFILE_PATH)
+	return clean_username(str(cfg.get_value("leaderboard", "name", "")))
+
+
+## Remembers a typed leaderboard name. Signed in without a username yet, it
+## becomes the username.
+func remember_name(name: String) -> void:
+	var cleaned: String = clean_username(name)
+	var cfg := ConfigFile.new()
+	cfg.load(PROFILE_PATH)
+	cfg.set_value("leaderboard", "name", cleaned)
+	cfg.save(PROFILE_PATH)
+	var cloud: Node = get_node_or_null("/root/Cloud")
+	if cloud != null and cloud.signed_in() and str(data.get("username", "")) == "" and cleaned != "":
+		set_username(cleaned)
 
 
 func set_username(name: String) -> void:

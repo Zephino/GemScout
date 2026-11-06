@@ -39,6 +39,11 @@ var cells: Array[Vector2i] = []
 var _edges: Array[PackedInt32Array] = []
 ## Node number -> nodes that can move to it.
 var _back: Array[PackedInt32Array] = []
+## For each edge in _edges / _back: the cells it sweeps through, as
+## x0, y0, x1, y1 (inclusive), so a closed door or a living Bouldermaw can
+## block it without rebuilding everything.
+var _edge_rects: Array[PackedInt32Array] = []
+var _back_rects: Array[PackedInt32Array] = []
 
 
 func _init(c: CaveData) -> void:
@@ -94,17 +99,26 @@ func _build() -> void:
 				cells.append(Vector2i(x, y))
 	_edges.resize(cells.size())
 	_back.resize(cells.size())
+	_edge_rects.resize(cells.size())
+	_back_rects.resize(cells.size())
 	for i in cells.size():
 		_back[i] = PackedInt32Array()
+		_back_rects[i] = PackedInt32Array()
 	for i in cells.size():
 		var out := PackedInt32Array()
-		for target in _moves_from(cells[i]):
+		var rects := PackedInt32Array()
+		var s: Vector2i = cells[i]
+		for target in _moves_from(s):
 			var j: int = node_at(target)
 			if j >= 0 and j != i and not out.has(j):
 				out.append(j)
+				# Everything the move might pass through (a little more than needed).
+				var r := PackedInt32Array([mini(s.x, target.x), mini(s.y, target.y) - BODY_H - HEADROOM_LONG, maxi(s.x, target.x) + BODY_W - 1, maxi(s.y, target.y)])
+				rects.append_array(r)
+				_back[j].append(i)
+				_back_rects[j].append_array(r)
 		_edges[i] = out
-		for j in out:
-			_back[j].append(i)
+		_edge_rects[i] = rects
 
 
 func _is_stand(x: int, y: int) -> bool:
@@ -151,10 +165,13 @@ func _jump_clear(s: Vector2i, t: Vector2i) -> bool:
 
 
 ## Nodes reachable from `from` (forward), or that can reach it (backward).
-func _search(from: int, backward: bool) -> PackedByteArray:
+## `excluded`: nodes that may not be stood on (1 = excluded; spikes, or
+## inside a barrier). `barriers`: closed doors etc. (cell rects) no move may
+## pass through.
+func _search(from: int, backward: bool, excluded: PackedByteArray = PackedByteArray(), barriers: Array[Rect2i] = []) -> PackedByteArray:
 	var seen := PackedByteArray()
 	seen.resize(cells.size())
-	if from < 0:
+	if from < 0 or (not excluded.is_empty() and excluded[from] == 1):
 		return seen
 	var queue := PackedInt32Array([from])
 	seen[from] = 1
@@ -162,11 +179,54 @@ func _search(from: int, backward: bool) -> PackedByteArray:
 	while head < queue.size():
 		var n: int = queue[head]
 		head += 1
-		for m in (_back[n] if backward else _edges[n]):
-			if seen[m] == 0:
-				seen[m] = 1
-				queue.append(m)
+		var list: PackedInt32Array = _back[n] if backward else _edges[n]
+		var rects: PackedInt32Array = _back_rects[n] if backward else _edge_rects[n]
+		for k in list.size():
+			var m: int = list[k]
+			if seen[m] == 1 or (not excluded.is_empty() and excluded[m] == 1):
+				continue
+			if not barriers.is_empty() and _crosses(rects, k, barriers):
+				continue
+			seen[m] = 1
+			queue.append(m)
 	return seen
+
+
+func _crosses(rects: PackedInt32Array, k: int, barriers: Array[Rect2i]) -> bool:
+	var x0: int = rects[k * 4]
+	var y0: int = rects[k * 4 + 1]
+	var x1: int = rects[k * 4 + 2]
+	var y1: int = rects[k * 4 + 3]
+	for b in barriers:
+		if x0 <= b.end.x - 1 and x1 >= b.position.x and y0 <= b.end.y - 1 and y1 >= b.position.y:
+			return true
+	return false
+
+
+## 1 for every node whose body would overlap one of `rects` (cells).
+func nodes_inside(rects: Array[Rect2i]) -> PackedByteArray:
+	var out := PackedByteArray()
+	out.resize(cells.size())
+	for i in cells.size():
+		var c: Vector2i = cells[i]
+		var body := Rect2i(c.x, c.y - BODY_H + 1, BODY_W, BODY_H)
+		for r in rects:
+			if body.intersects(r):
+				out[i] = 1
+				break
+	return out
+
+
+## Combines two exclusion lists (either may be empty).
+static func merge_excluded(a: PackedByteArray, b: PackedByteArray) -> PackedByteArray:
+	if a.is_empty():
+		return b
+	if b.is_empty():
+		return a
+	var out := a.duplicate()
+	for i in out.size():
+		out[i] = 1 if a[i] == 1 or b[i] == 1 else 0
+	return out
 
 
 class Result:
@@ -178,11 +238,12 @@ class Result:
 	var backward: PackedByteArray
 
 
-func analyse(start: Vector2i) -> Result:
+func analyse(start: Vector2i, excluded: PackedByteArray = PackedByteArray(), barriers: Array[Rect2i] = []) -> Result:
 	var r := Result.new()
 	var s: int = node_at(start)
-	r.forward = _search(s, false)
-	r.backward = _search(s, true)
+	var ex: PackedByteArray = merge_excluded(excluded, nodes_inside(barriers)) if not barriers.is_empty() else excluded
+	r.forward = _search(s, false, ex, barriers)
+	r.backward = _search(s, true, ex, barriers)
 	for i in cells.size():
 		if r.forward[i] == 0:
 			continue

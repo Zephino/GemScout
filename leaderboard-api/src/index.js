@@ -1,6 +1,6 @@
 /**
  * GemScout online service (Cloudflare Worker).
- *   GET  /leaderboard   the board, best first
+ *   GET  /leaderboard   the boards (easy, medium, hard), best first
  *   POST /leaderboard   send one cleared cave; it is checked, then saved
  *   GET/PUT /cloud/save cloud saves, by private sync code (see cloud.js)
  *   /auth/*             Sign in with Google (see accounts.js)
@@ -17,7 +17,7 @@
  * Vars:     GITHUB_OWNER, GITHUB_REPO, GITHUB_PATH, GITHUB_BRANCH (see wrangler.toml)
  */
 
-import { addEntry, emptyBoard, isDuplicate, normalizeBoard, qualifies, validateScore } from "./board.js";
+import { addEntry, countEntries, emptyBoard, isDuplicate, normalizeBoard, qualifies, validateScore } from "./board.js";
 import { handleSuggestionPost, suggestionStatus } from "./suggestions.js";
 import { handleCloud } from "./cloud.js";
 import { handleAuth } from "./accounts.js";
@@ -135,12 +135,12 @@ async function commitToGitHub(env, board) {
     return;
   }
   const content = btoa(unescape(encodeURIComponent(text)));
-  const top = board.entries[0];
+  const total = countEntries(board);
   const putRes = await fetch(api, {
     method: "PUT",
     headers,
     body: JSON.stringify({
-      message: top ? `Leaderboard: ${board.entries.length} scores` : "Leaderboard update",
+      message: total ? `Leaderboard: ${total} scores` : "Leaderboard update",
       content,
       branch: s.branch,
       sha,
@@ -190,13 +190,13 @@ async function handlePost(request, env, ip) {
     return jsonResponse({ error: "rate limited" }, 429);
   }
   const board = await loadBoard(env);
-  if (isDuplicate(board.entries, checked.entry) || !qualifies(board, checked.entry)) {
+  if (isDuplicate(board, checked.entry) || !qualifies(board, checked.entry)) {
     return jsonResponse({ ...board, accepted: false, score: checked.entry.score });
   }
   const date = new Date().toISOString();
   const updated = addEntry(board, checked.entry, date);
   await saveBoard(env, updated);
-  const rank = updated.entries.findIndex((e) => e.date === date && e.name === checked.entry.name && e.seed === checked.entry.seed) + 1;
+  const rank = updated.boards[checked.entry.difficulty].findIndex((e) => e.date === date && e.name === checked.entry.name && e.seed === checked.entry.seed) + 1;
   return jsonResponse({ ...updated, accepted: true, rank, score: checked.entry.score });
 }
 

@@ -88,7 +88,7 @@ func _ready() -> void:
 func _refresh_badge() -> void:
 	if CloudSync.signed_in():
 		var name: String = Save.username()
-		_badge.text = "Signed in: " + (name if name != "" else "signed in")
+		_badge.text = "Signed in: " + name if name != "" else "Signed in with Google"
 		_badge.add_theme_color_override("font_color", UiKit.GOOD)
 	else:
 		_badge.text = "Not signed in"

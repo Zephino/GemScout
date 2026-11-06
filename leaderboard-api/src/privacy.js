@@ -11,7 +11,7 @@ const SECTIONS = [
     "<b>Sign in with Google:</b> Google's account id for you, stored scrambled (hashed). Your Google email is passed straight to your own device so the game can show which account you're signed in with; the server doesn't keep it. GemScout never asks Google for your real name.",
     "<b>Username:</b> the name you choose in the game, saved with your progress and shown on the leaderboard.",
     "<b>Cloud save:</b> your game progress (records, username, settings), stored under your account's private code, so it can follow you between devices.",
-    "<b>Leaderboard:</b> the name you send (up to 12 characters), your score, time, the cave's seed, a small map picture of the cave, and the game version, shown publicly.",
+    "<b>Leaderboard:</b> the name you send (up to 12 characters), your score, difficulty, time, the cave's seed, a small map picture of the cave, and the game version, shown publicly.",
     "<b>Suggestions:</b> the text you send, posted anonymously as a GitHub issue on the game's repository.",
   ]],
   ["What it doesn't do", [

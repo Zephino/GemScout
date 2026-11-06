@@ -16,6 +16,7 @@ func _init(result: Dictionary, on_new_cave: Callable, on_replay: Callable, on_me
 	var parts: Array = UiKit.screen("Cave cleared!", 460)
 	root = parts[0]
 	_column = parts[1]
+	_column.add_child(UiKit.label(Difficulty.label(result["difficulty"]), 16, UiKit.MUTED))
 	var gems: int = result["gems"]
 	var time_ms: int = result["time_ms"]
 	var lines: Array = [
@@ -43,14 +44,16 @@ func _init(result: Dictionary, on_new_cave: Callable, on_replay: Callable, on_me
 	_name = LineEdit.new()
 	_name.max_length = Save.MAX_USERNAME
 	_name.placeholder_text = "Your name"
-	_name.text = Save.username()
+	_name.text = Save.leaderboard_name()
+	# Signed in with a username: that's the name (it hides the Google name).
+	_name.editable = Save.username() == ""
 	_name.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_name.custom_minimum_size = Vector2(0, 38)
 	row2.add_child(_name)
 	_send = UiKit.button("Send score", _on_send, 130)
 	row2.add_child(_send)
 	_column.add_child(row2)
-	_status = UiKit.label("Send your score to the leaderboard?", 14, UiKit.MUTED)
+	_status = UiKit.label("Send your score to the %s leaderboard?" % Difficulty.label(result["difficulty"]), 14, UiKit.MUTED)
 	_column.add_child(_status)
 	_column.add_child(UiKit.button("Play a new cave", func() -> void: on_new_cave.call()))
 	_column.add_child(UiKit.button("Play this cave again", func() -> void: on_replay.call()))
@@ -63,12 +66,12 @@ func _on_send() -> void:
 	if name == "":
 		_say("Type a name first (letters and numbers).", UiKit.BAD)
 		return
-	if Save.username() == "":
-		Save.set_username(name)
+	Save.remember_name(name)
 	_send.disabled = true
 	_say("Sending…", UiKit.MUTED)
 	var entry := {
 		"name": name,
+		"difficulty": _result["difficulty"],
 		"seed": str(_result["seed"]),
 		"gen": _result["gen"],
 		"gems": _result["gems"],

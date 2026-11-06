@@ -23,6 +23,24 @@ var start: Vector2i = Vector2i.ZERO
 var exit: Vector2i = Vector2i.ZERO
 var gems: Array[Vector2i] = []
 
+# Things placed by CaveFeatures (cells; see that file for the fairness rules).
+## Coloured doors: {color: 0 red / 1 blue / 2 yellow, rect: Rect2i, lever: Vector2i}.
+var doors: Array[Dictionary] = []
+## Crystal beams: {rect: Rect2i, switch: Vector2i}. On at the start; they hurt.
+var beams: Array[Dictionary] = []
+## Bouldermaws: {rect: Rect2i}. Solid until shot 3 times.
+var boulders: Array[Dictionary] = []
+## Spike strips: the air cells just above the floor that hurt.
+var spikes: Array[Rect2i] = []
+## Enemies: {type, ...}: "shellback" {cell, from_x, to_x}, "glowmoth" {center: Vector2 px},
+## "dripjaw" {cell (ceiling), floor_y (px)}, "spitter" {cell, dir: -1 / 1}.
+var enemies: Array[Dictionary] = []
+## Pickups: {type: "heart" / "ammo" / "power_shot" / "gravity" / "freeze" / "shield", cell}.
+## Ammo crates are only used on Medium.
+var pickups: Array[Dictionary] = []
+## Every standing cell the scout can reach and come back from, with all doors open.
+var safe: Dictionary = {}
+
 
 func setup(w: int, h: int) -> void:
 	width = w

@@ -4,7 +4,7 @@ A small free **Cloudflare Worker** (`gemscout`, at https://gemscout.thebotcoder.
 
 | Path | What it does | Code |
 | --- | --- | --- |
-| `GET /leaderboard` | The board, best first | `src/index.js`, `src/board.js` |
+| `GET /leaderboard` | The boards (Easy, Medium, Hard), best first | `src/index.js`, `src/board.js` |
 | `POST /leaderboard` | Send one cleared cave; the Worker checks it and works out the score itself | `src/board.js` |
 | `GET/PUT /cloud/save` | Cloud saves, by the account's private code | `src/cloud.js` |
 | `/auth/*` | Sign in with Google | `src/accounts.js` |
@@ -17,7 +17,8 @@ Game ──POST score──▶ Worker (checks it) ──▶ Workers KV "GemScout
 ```
 
 - The game **never holds a key**. The GitHub token and Google secrets live only on Cloudflare as secrets.
-- Each leaderboard row keeps: name, score, time, gems, no-damage, the cave's **seed** and generator version (so the cave can be replayed), a small **map picture** of the cave (PNG, at most 4 KB), the game version, and the date. The best 50 are kept.
+- There is a separate board for each difficulty (Easy, Medium, Hard), best 50 each.
+- Each leaderboard row keeps: name, difficulty, score, time, gems, no-damage, the cave's **seed** and generator version (so the cave can be replayed), a small **map picture** of the cave (PNG, at most 4 KB), the game version, and the date.
 - The first score creates the `data` branch by itself, holding only `leaderboard.json` (no copy of the game's code).
 
 ## Setup (already done)
@@ -39,7 +40,7 @@ Every push to `main` then redeploys the Worker. **Check the Cloudflare deploymen
 
 ### Check it works
 
-- `https://gemscout.thebotcoder.workers.dev/leaderboard` shows `{"_about": ..., "entries": []}`.
+- `https://gemscout.thebotcoder.workers.dev/leaderboard` shows `{"_about": ..., "boards": {"easy": [], "medium": [], "hard": []}}`.
 - `https://gemscout.thebotcoder.workers.dev/suggestions` shows `{"accepting":true}`.
 - `https://gemscout.thebotcoder.workers.dev/privacy` shows the privacy policy.
 - In the game: Settings → **Sign in with Google**, then sign in on your phone too: both share progress.

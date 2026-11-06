@@ -7,9 +7,14 @@ PALETTE. Change a grid (or a colour) and run this again:
     python3 tools/make_art.py
 
 It writes:
-  assets/sprites/hero.png   16x24 frames: idle, run x4, jump, fall
-  assets/sprites/gems.png   12x12 frames: one per gem colour
-  assets/sprites/door.png   24x32 frames: locked, open
+  assets/sprites/hero.png     16x24 frames: idle, run x4, jump, fall
+  assets/sprites/gems.png     12x12 frames: one per gem colour
+  assets/sprites/door.png     24x32 frames: locked, open
+  assets/sprites/enemies.png  16x16 frames: shellback x2, glowmoth x2,
+                              dripjaw x2, spitter x2, glob
+  assets/sprites/items.png    12x12 frames: heart, empty heart, ammo crate,
+                              ammo, power shot, reverse gravity, freeze,
+                              shield, lever up, lever down, switch on, off
   assets/icons/icon_*.png   app icons (web install, Godot)
   icon.png                  the Godot project icon
 Needs Pillow (pip install pillow).
@@ -153,6 +158,332 @@ GEM_COLOURS = [
 ]
 
 
+
+# --- Enemies (16x16 frames; all original designs) ----------------------------
+
+ENEMY_PALETTE = {
+    ".": None,
+    "O": (26, 20, 32),
+    # Shellback: an armoured cave beetle.
+    "A": (104, 150, 66), "a": (62, 96, 42), "h": (170, 210, 110), "L": (48, 36, 36), "E": (240, 70, 60),
+    # Glowmoth: pale wings with glowing spots.
+    "G": (206, 196, 240), "g": (150, 140, 200), "W": (240, 232, 205), "Y": (255, 240, 140),
+    # Dripjaw: a living stalactite.
+    "R": (136, 120, 156), "r": (92, 82, 108), "T": (250, 250, 240), "e": (255, 200, 60),
+    # Spitter: a wall pod.
+    "P": (96, 176, 96), "p": (52, 112, 62), "M": (210, 64, 96), "S": (200, 240, 90),
+}
+
+SHELLBACK_TOP = [
+    "................",
+    "................",
+    "................",
+    "................",
+    "................",
+    "......OOOO......",
+    "....OOhhAAOO....",
+    "...OhhAAAAAAO...",
+    "..OhAAAaAAAAAOO.",
+    "..OAAAAaAAAAAOEO",
+    "..OaAAAaAAAAAOOO",
+    "..OOaaaaaaaaaOO.",
+    "...OOOOOOOOOOO..",
+]
+SHELLBACK = [
+    SHELLBACK_TOP + ["...L..L..L..L...", "..L..L..L..L....", "................"],
+    SHELLBACK_TOP + ["....L..L..L..L..", "...L..L..L..L...", "................"],
+]
+
+GLOWMOTH = [
+    [
+        "................",
+        "..OOO......OOO..",
+        ".OGGGO....OGGGO.",
+        ".OGYGGO..OGGYGO.",
+        ".OGGGgGOOGgGGGO.",
+        "..OGGGgWWgGGGO..",
+        "...OOGGWWGGOO...",
+        ".....OOWWOO.....",
+        "......OWWO......",
+        "......OWWO......",
+        ".......OO.......",
+        "................",
+        "................",
+        "................",
+        "................",
+        "................",
+    ],
+    [
+        "................",
+        "................",
+        "................",
+        "......OOOO......",
+        "...OOOOWWOOOO...",
+        "..OGGGGWWGGGGO..",
+        ".OGGYGgWWgGYGGO.",
+        ".OGGGGOWWOGGGGO.",
+        "..OGGO.OWO.OGGO.",
+        "...OO..OWO..OO..",
+        ".......OO.......",
+        "................",
+        "................",
+        "................",
+        "................",
+        "................",
+    ],
+]
+
+DRIPJAW_TOP = [
+    "..OOOOOOOOOOOO..",
+    "..ORRRRRRRRRRO..",
+    "...ORRRRRRRRO...",
+    "...OrReRReRrO...",
+    "....ORRRRRRO....",
+    "....OrRRRRrO....",
+]
+DRIPJAW = [
+    DRIPJAW_TOP + [
+        ".....ORRRRO.....",
+        ".....OrTTrO.....",
+        "......ORRO......",
+        "......OrrO......",
+        ".......OO.......",
+        "................",
+        "................",
+        "................",
+        "................",
+        "................",
+    ],
+    DRIPJAW_TOP + [
+        "....OTRRRRTO....",
+        "....OT....TO....",
+        "....OT....TO....",
+        ".....OT..TO.....",
+        "......O..O......",
+        "................",
+        "................",
+        "................",
+        "................",
+        "................",
+    ],
+]
+
+SPITTER_BODY = [
+    "................",
+    "....OOOO........",
+    "...OPPPPOO......",
+    "..OPPpPPPPO.....",
+    "..OPpPPPPPPO....",
+]
+SPITTER = [
+    SPITTER_BODY + [
+        "..OPPPPPPPPPO...",
+        "..OPpPPPPPPPO...",
+        "..OPPPPPPPPO....",
+        "...OPPpPPPO.....",
+        "....OOOOOO......",
+        "................",
+        "................",
+        "................",
+        "................",
+        "................",
+        "................",
+    ],
+    SPITTER_BODY + [
+        "..OPPPPPPPOMMO..",
+        "..OPpPPPPPOMMMO.",
+        "..OPPPPPPPOMMO..",
+        "...OPPpPPPO.....",
+        "....OOOOOO......",
+        "................",
+        "................",
+        "................",
+        "................",
+        "................",
+        "................",
+    ],
+]
+
+GLOB = [
+    "................",
+    "................",
+    "................",
+    "................",
+    "................",
+    "......OOO.......",
+    ".....OSSSO......",
+    ".....OSPSO......",
+    ".....OSSSO......",
+    "......OOO.......",
+    "................",
+    "................",
+    "................",
+    "................",
+    "................",
+    "................",
+]
+
+
+def make_enemies():
+    frames = SHELLBACK + GLOWMOTH + DRIPJAW + SPITTER + [GLOB]
+    img = Image.new("RGBA", (16 * len(frames), 16), (0, 0, 0, 0))
+    for i, rows in enumerate(frames):
+        assert len(rows) == 16 and all(len(r) == 16 for r in rows), f"enemy frame {i} must be 16x16"
+        draw_grid(img, rows, i * 16, 0, ENEMY_PALETTE)
+    return img
+
+
+# --- Items (12x12 frames) -----------------------------------------------------
+
+ITEM_PALETTE = {
+    ".": None,
+    "O": (26, 20, 32),
+    "R": (232, 52, 72), "r": (150, 22, 42), "W": (255, 255, 255),
+    "E": (64, 54, 76), "e": (44, 36, 56),
+    "B": (156, 104, 52), "b": (104, 68, 32), "M": (150, 150, 165), "Y": (250, 210, 70),
+    "C": (90, 220, 240), "c": (40, 140, 170),
+    "K": (250, 250, 250), "S": (210, 210, 220), "s": (140, 140, 156),
+    "L": (255, 170, 60), "l": (90, 70, 60),
+}
+
+HEART = [
+    "............",
+    "..OO....OO..",
+    ".ORRO..ORRO.",
+    "ORWRROORRRRO",
+    "ORRRRRRRRRRO",
+    "ORRRRRRRRRrO",
+    ".ORRRRRRRrO.",
+    "..ORRRRRrO..",
+    "...ORRRrO...",
+    "....ORrO....",
+    ".....OO.....",
+    "............",
+]
+HEART_EMPTY = [row.replace("R", "E").replace("r", "e").replace("W", "E") for row in HEART]
+
+CRATE = [
+    "............",
+    "............",
+    "OOOOOOOOOOOO",
+    "OBBBBBBBBBBO",
+    "ObMMMMMMMMbO",
+    "OBBBYYYYBBBO",
+    "OBBBYCCYBBBO",
+    "OBBBYYYYBBBO",
+    "ObMMMMMMMMbO",
+    "OBBBBBBBBBBO",
+    "OOOOOOOOOOOO",
+    "............",
+]
+
+AMMO = [
+    "............",
+    "....OOOO....",
+    "...OCCCCO...",
+    "...OCWCCO...",
+    "...OCCCCO...",
+    "...OCCCCO...",
+    "...OCCCcO...",
+    "...OCCCcO...",
+    "...OCCccO...",
+    "...OMMMMO...",
+    "....OOOO....",
+    "............",
+]
+
+ORB = [
+    "...OOOOOO...",
+    "..OCCCCCCO..",
+    ".OCWCCCCCCO.",
+    "OCWCCCCCCCCO",
+    "OCCCCCCCCCCO",
+    "OCCCCCCCCCCO",
+    "OCCCCCCCCCCO",
+    "OCCCCCCCCCCO",
+    "OCCCCCCCCCcO",
+    ".OCCCCCCCcO.",
+    "..OCCCCCcO..",
+    "...OOOOOO...",
+]
+# Symbols drawn in white over the middle of an orb.
+ORB_SYMBOLS = {
+    "power_shot": ["..K...", "...K..", "KKKKK.", "...K..", "..K...", "......"],
+    "gravity": ["..KK..", ".KKKK.", "..KK..", "..KK..", ".KKKK.", "..KK.."],
+    "freeze": ["K.K.K.", ".KKK..", "KKKKK.", ".KKK..", "K.K.K.", "......"],
+    "shield": ["KKKKK.", "K...K.", "K...K.", ".K.K..", "..K...", "......"],
+}
+ORB_COLOURS = {
+    "power_shot": ((255, 150, 60), (180, 80, 20)),
+    "gravity": ((170, 110, 240), (100, 50, 170)),
+    "freeze": ((130, 210, 255), (60, 130, 200)),
+    "shield": ((110, 220, 130), (40, 140, 70)),
+}
+
+# Levers are drawn in white and grey so the game can tint them red, blue or yellow.
+LEVER_UP = [
+    "............",
+    ".KK.........",
+    ".KK.........",
+    "...S........",
+    "....S.......",
+    ".....S......",
+    "......S.....",
+    "....OOOOO...",
+    "...OSSSSSO..",
+    "...OSsssSO..",
+    "..OOOOOOOOO.",
+    "............",
+]
+LEVER_DOWN = [row[::-1] for row in LEVER_UP]
+
+SWITCH_ON = [
+    "............",
+    ".OOOOOOOOOO.",
+    ".OSSSSSSSSO.",
+    ".OSsOOOOsSO.",
+    ".OSOLLLLOSO.",
+    ".OSOLWLLOSO.",
+    ".OSOLLLLOSO.",
+    ".OSsOOOOsSO.",
+    ".OSSSSSSSSO.",
+    ".OOOOOOOOOO.",
+    "............",
+    "............",
+]
+SWITCH_OFF = [row.replace("L", "l").replace("W", "l") for row in SWITCH_ON]
+
+
+def make_items():
+    frames = [HEART, HEART_EMPTY, CRATE, AMMO]
+    orbs = []
+    for name in ("power_shot", "gravity", "freeze", "shield"):
+        light, dark = ORB_COLOURS[name]
+        rows = [list(r) for r in ORB]
+        for y, srow in enumerate(ORB_SYMBOLS[name]):
+            for x, ch in enumerate(srow):
+                if ch == "K":
+                    rows[3 + y][3 + x] = "K"
+        orbs.append((["".join(r) for r in rows], light, dark))
+    tail = [LEVER_UP, LEVER_DOWN, SWITCH_ON, SWITCH_OFF]
+    count = len(frames) + len(orbs) + len(tail)
+    img = Image.new("RGBA", (12 * count, 12), (0, 0, 0, 0))
+    i = 0
+    for rows in frames:
+        draw_grid(img, rows, i * 12, 0, ITEM_PALETTE)
+        i += 1
+    for rows, light, dark in orbs:
+        pal = dict(ITEM_PALETTE)
+        pal["C"] = light
+        pal["c"] = dark
+        draw_grid(img, rows, i * 12, 0, pal)
+        i += 1
+    for rows in tail:
+        draw_grid(img, rows, i * 12, 0, ITEM_PALETTE)
+        i += 1
+    return img
+
+
 def draw_grid(img, rows, ox, oy, palette):
     for y, row in enumerate(rows):
         assert len(row) == len(rows[0]), f"row {y} is {len(row)} wide: {row!r}"
@@ -236,6 +567,8 @@ def main():
     make_hero().save(sprites / "hero.png")
     make_gems().save(sprites / "gems.png")
     make_door().save(sprites / "door.png")
+    make_enemies().save(sprites / "enemies.png")
+    make_items().save(sprites / "items.png")
     icon = make_icon()
     for size in (144, 180, 512):
         icon.resize((size, size), Image.NEAREST).save(icons / f"icon_{size}.png")

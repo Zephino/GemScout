@@ -49,3 +49,15 @@ func test_save_merge_and_username_rules() -> void:
 	check_eq(m["records"]["best_time_ms"], 40_000, "fastest time wins")
 	check_eq(m["records"]["caves_cleared"], 5, "most caves cleared")
 	check_eq(save.sanitize({"records": {"best_score": -5}, "settings": {"touch": "weird"}})["settings"]["touch"], "auto", "bad settings are reset")
+
+
+func test_username_only_while_signed_in() -> void:
+	var save: Node = tree.root.get_node("Save")
+	var kept: Dictionary = save.data.duplicate(true)
+	save.data["username"] = "Hidden"
+	check(not CloudSync.signed_in(), "the tests run signed out")
+	check_eq(save.username(), "", "no username while signed out (it hides the Google name)")
+	save.remember_name("Typed Name")
+	check_eq(save.leaderboard_name(), "Typed Name", "signed out, the leaderboard uses the name typed last")
+	check_eq(str(save.data["username"]), "Hidden", "typing a name signed out doesn't change the username")
+	save.data = kept

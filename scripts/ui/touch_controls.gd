@@ -6,8 +6,9 @@ extends CanvasLayer
 ## switches direction.
 ##
 ## Two layouts, picked automatically when the phone is turned:
-##   landscape  see-through buttons over the game: move bottom-left, jump
-##              bottom-right; the camera keeps the scout above them
+##   landscape  see-through buttons over the game: move bottom-left; jump,
+##              shoot and use (levers, switches) bottom-right; the camera
+##              keeps the scout above them
 ##   portrait   the game on top and a solid control panel below it, so
 ##              the buttons never cover the cave
 ## Shown on touch screens only (Settings → Touch controls: Auto / On / Off).
@@ -77,9 +78,12 @@ func _layout() -> void:
 		_panel_h = vp.y * PANEL_SHARE
 		var r: float = minf(_panel_h * 0.26, vp.x * 0.11)
 		var cy: float = vp.y - _panel_h / 2.0
-		buttons.append({"action": "move_left", "center": Vector2(vp.x * 0.16, cy), "radius": r, "icon": "left"})
-		buttons.append({"action": "move_right", "center": Vector2(vp.x * 0.16 + r * 2.5, cy), "radius": r, "icon": "right"})
-		buttons.append({"action": "jump", "center": Vector2(vp.x * 0.80, cy), "radius": r * 1.15, "icon": "up"})
+		buttons.append({"action": "move_left", "center": Vector2(vp.x * 0.16, cy + r * 0.3), "radius": r, "icon": "left"})
+		buttons.append({"action": "move_right", "center": Vector2(vp.x * 0.16 + r * 2.5, cy + r * 0.3), "radius": r, "icon": "right"})
+		# Right side: jump at the bottom, shoot above it, the lever button beside shoot.
+		buttons.append({"action": "jump", "center": Vector2(vp.x * 0.84, cy + r * 0.45), "radius": r * 1.05, "icon": "up"})
+		buttons.append({"action": "shoot", "center": Vector2(vp.x * 0.84, cy - r * 1.6), "radius": r * 0.85, "icon": "shoot"})
+		buttons.append({"action": "interact", "center": Vector2(vp.x * 0.84 - r * 2.1, cy - r * 1.6), "radius": r * 0.75, "icon": "use"})
 	else:
 		_panel_h = 0.0
 		var r: float = clampf(vp.y * 0.11, 30.0, 52.0)
@@ -87,7 +91,10 @@ func _layout() -> void:
 		var cy: float = vp.y - m - r
 		buttons.append({"action": "move_left", "center": Vector2(m + r, cy), "radius": r, "icon": "left"})
 		buttons.append({"action": "move_right", "center": Vector2(m + r * 3.3, cy), "radius": r, "icon": "right"})
-		buttons.append({"action": "jump", "center": Vector2(vp.x - m - r * 1.1, cy), "radius": r * 1.1, "icon": "up"})
+		var jx: float = vp.x - m - r * 1.1
+		buttons.append({"action": "jump", "center": Vector2(jx, cy), "radius": r * 1.1, "icon": "up"})
+		buttons.append({"action": "shoot", "center": Vector2(jx - r * 2.5, cy + r * 0.2), "radius": r * 0.9, "icon": "shoot"})
+		buttons.append({"action": "interact", "center": Vector2(jx - r * 0.4, cy - r * 2.3), "radius": r * 0.75, "icon": "use"})
 	_pad.queue_redraw()
 	layout_changed.emit()
 
@@ -121,8 +128,9 @@ func _input(event: InputEvent) -> void:
 		if not _held.has(drag.index):
 			return
 		var action: String = _button_at(drag.position)
-		# Slide between left and right; jump stays held until the finger lifts.
-		if action != "" and action != _held[drag.index] and _held[drag.index] != "jump":
+		# Slide between left and right; other buttons stay held until the finger lifts.
+		var moves: Array[String] = ["move_left", "move_right"]
+		if action != "" and action != _held[drag.index] and moves.has(action) and moves.has(_held[drag.index]):
 			_release(drag.index)
 			_hold(drag.index, action)
 		get_viewport().set_input_as_handled()
@@ -169,6 +177,17 @@ func _draw_pad() -> void:
 				pts = PackedVector2Array([c + Vector2(-s, 0), c + Vector2(s * 0.6, -s), c + Vector2(s * 0.6, s)])
 			"right":
 				pts = PackedVector2Array([c + Vector2(s, 0), c + Vector2(-s * 0.6, -s), c + Vector2(-s * 0.6, s)])
+			"shoot":
+				# A blaster bolt.
+				_pad.draw_line(c + Vector2(-s, 0), c + Vector2(s * 0.3, 0), Color(0.5, 0.9, 1.0, minf(1.0, alpha + 0.35)), s * 0.35)
+				_pad.draw_circle(c + Vector2(s * 0.45, 0), s * 0.45, Color(1, 0.97, 0.9, minf(1.0, alpha + 0.35)))
+				continue
+			"use":
+				# A lever.
+				_pad.draw_line(c + Vector2(-s * 0.2, s * 0.5), c + Vector2(s * 0.4, -s * 0.6), Color(1, 0.97, 0.9, minf(1.0, alpha + 0.35)), s * 0.25)
+				_pad.draw_circle(c + Vector2(s * 0.45, -s * 0.65), s * 0.3, Color(1, 0.85, 0.4, minf(1.0, alpha + 0.35)))
+				_pad.draw_rect(Rect2(c + Vector2(-s * 0.7, s * 0.4), Vector2(s * 1.4, s * 0.35)), Color(1, 0.97, 0.9, minf(1.0, alpha + 0.35)))
+				continue
 			_:
 				pts = PackedVector2Array([c + Vector2(0, -s), c + Vector2(s, s * 0.6), c + Vector2(-s, s * 0.6)])
 		_pad.draw_colored_polygon(pts, Color(1, 0.97, 0.9, minf(1.0, alpha + 0.35)))

@@ -2,8 +2,8 @@ class_name SettingsScreen
 extends RefCounted
 ## Settings: fullscreen, install / update the app (web), touch controls, and
 ## the account: Sign in with Google (to carry progress between phone and
-## web), who you're signed in as, and your username (shown on the
-## leaderboard instead of your Google name).
+## web), who you're signed in as, and, while signed in, your username (shown
+## on the leaderboard instead of your Google name).
 
 var root: Control
 var _column: VBoxContainer
@@ -12,6 +12,9 @@ var _status: Label
 var _account_box: VBoxContainer
 var _name_edit: LineEdit
 var _name_note: Label
+## Kept across refreshes (syncing rebuilds the account box).
+var _note_text: String = ""
+var _note_color: Color = UiKit.MUTED
 
 
 func _init(on_close: Callable) -> void:
@@ -75,8 +78,19 @@ func _build() -> void:
 	_account_box = VBoxContainer.new()
 	_column.add_child(_account_box)
 
-	_section("Username")
-	_column.add_child(UiKit.label("Shown on the leaderboard instead of your Google name. Letters, numbers, space, _ and -, up to 12.", 13, UiKit.MUTED, HORIZONTAL_ALIGNMENT_LEFT))
+	var gap := Control.new()
+	gap.custom_minimum_size = Vector2(0, 6)
+	_column.add_child(gap)
+	_column.add_child(UiKit.button("Back", func() -> void: _on_close.call()))
+	_refresh_account()
+	UiKit.focus_first(_column)
+
+
+## The username: only while signed in. It's what other players see, so
+## your Google name stays hidden.
+func _build_username() -> void:
+	_account_box.add_child(UiKit.label("Username", 18, UiKit.GOLD, HORIZONTAL_ALIGNMENT_LEFT))
+	_account_box.add_child(UiKit.label("Shown on the leaderboard instead of your Google name. Letters, numbers, space, _ and -, up to 12.", 13, UiKit.MUTED, HORIZONTAL_ALIGNMENT_LEFT))
 	var row := HBoxContainer.new()
 	_name_edit = LineEdit.new()
 	_name_edit.max_length = Save.MAX_USERNAME
@@ -87,28 +101,27 @@ func _build() -> void:
 	_name_edit.text_submitted.connect(func(_t: String) -> void: _save_name())
 	row.add_child(_name_edit)
 	row.add_child(UiKit.button("Save", _save_name, 90))
-	_column.add_child(row)
-	_name_note = UiKit.label("", 14, UiKit.MUTED)
-	_column.add_child(_name_note)
-
-	var gap := Control.new()
-	gap.custom_minimum_size = Vector2(0, 6)
-	_column.add_child(gap)
-	_column.add_child(UiKit.button("Back", func() -> void: _on_close.call()))
-	_refresh_account()
-	UiKit.focus_first(_column)
+	_account_box.add_child(row)
+	_name_note = UiKit.label(_note_text, 14, _note_color)
+	_account_box.add_child(_name_note)
 
 
 func _save_name() -> void:
 	var cleaned: String = Save.clean_username(_name_edit.text)
 	if cleaned == "":
-		_name_note.text = "Pick a name with at least one letter or number."
-		_name_note.add_theme_color_override("font_color", UiKit.BAD)
+		_note("Pick a name with at least one letter or number.", UiKit.BAD)
 		return
+	_note("Saved. It will sync to your other devices.", UiKit.GOOD)
 	Save.set_username(cleaned)
 	_name_edit.text = cleaned
-	_name_note.text = "Saved." + (" It will sync to your other devices." if CloudSync.signed_in() else "")
-	_name_note.add_theme_color_override("font_color", UiKit.GOOD)
+
+
+func _note(text: String, color: Color) -> void:
+	_note_text = text
+	_note_color = color
+	if is_instance_valid(_name_note):
+		_name_note.text = text
+		_name_note.add_theme_color_override("font_color", color)
 
 
 func _refresh_account() -> void:
@@ -122,6 +135,7 @@ func _refresh_account() -> void:
 		_account_box.add_child(UiKit.label("Signed in with Google" + (" as " + who if who != "" else ""), 15, UiKit.GOOD, HORIZONTAL_ALIGNMENT_LEFT))
 		var sync_text: String = {"syncing": "Syncing your progress…", "synced": "Progress synced between your devices.", "error": "Couldn't sync right now; will try again.", "off": ""}[Cloud.state]
 		_account_box.add_child(UiKit.label(sync_text, 13, UiKit.MUTED, HORIZONTAL_ALIGNMENT_LEFT))
+		_build_username()
 		_account_box.add_child(UiKit.button("Sign out", func() -> void: Cloud.sign_out()))
 	elif sign_in.busy():
 		_account_box.add_child(UiKit.label("Finish signing in on the Google page that opened, then come back here.", 15, UiKit.TEXT, HORIZONTAL_ALIGNMENT_LEFT))

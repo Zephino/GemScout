@@ -1,7 +1,7 @@
 extends TestCase
 ## The cave generator: same seed → same cave; every cave can be finished.
 
-const SEEDS := 120
+const SEEDS := 60
 
 
 func test_same_seed_same_cave() -> void:

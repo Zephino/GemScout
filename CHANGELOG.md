@@ -2,6 +2,63 @@
 
 One entry per change request, newest first (see `.cursor/rules/changelog.mdc`). The version here always matches `VERSION`. Times are US Eastern.
 
+## Version 00.01.02
+Date: 11/06/2026
+Time: 12:48 AM
+
+### Changes
+- **Difficulty**, chosen when you press Play:
+  - **Easy:** 5 hearts, unlimited shots with a short cooldown.
+  - **Medium:** 3 hearts, 6 shots plus ammo crates (+5 each).
+  - **Hard:** 1 heart, 10 shots for the whole cave.
+  - On Medium and Hard an empty blaster recharges one shot every 15 s, so a cave can't become impossible.
+- **Health:**
+  - Each hit costs a heart, then you flash and can't be hurt for a moment.
+  - Out of hearts restarts the cave (same seed).
+  - One heart pickup per cave.
+  - The no-damage bonus now really requires no hits.
+- **The blaster:** shoot with J/C, controller B, or the new phone button.
+- **Five original enemies:**
+  - **Shellback:** an armoured beetle that patrols floors.
+  - **Glowmoth:** drifts in a figure-eight.
+  - **Dripjaw:** a living stalactite that drops on you.
+  - **Spitter:** a wall pod that spits slow globs.
+  - **Bouldermaw:** a rock creature blocking a tunnel; 3 shots, or 1 with Power shot.
+- **Puzzles and hazards:**
+  - **Coloured doors:** red, blue and yellow, opened by the lever of the same colour.
+  - **Crystal beams:** hurt until you turn them off with their switch.
+  - **Spikes** on the floor.
+  - Use levers and switches with E/X, controller X, or the new phone button. An arrow shows when you can.
+- **Power-ups:**
+  - **Power shot** (15 s): shots go through enemies.
+  - **Reverse gravity** (10 s): walk on ceilings. If you land somewhere unsafe afterwards, you're put back on safe ground.
+  - **Freeze** (10 s): enemies can't move or hurt you.
+  - **Shield:** your next hit is free.
+- **Fair caves:** the cave generator (now version 2) places all of this and checks each cave like a player would.
+  - Every lever and switch is reachable before its door or beam.
+  - Spikes never block the only way.
+  - Nothing can leave you stuck.
+  - At most 2 Bouldermaws.
+  - Enemies never start near you.
+- **HUD and phones:**
+  - The HUD shows hearts, ammo (with a recharge bar when empty) and active power-ups.
+  - The gem counter now uses the blue gem, so it can't be mistaken for a heart.
+  - Phones get shoot and lever buttons in both landscape and portrait.
+- **Leaderboard:**
+  - Separate boards for Easy, Medium and Hard (tabs; best 50 each). Each row keeps its difficulty, seed and map.
+  - Play replays that cave on that difficulty.
+  - The Worker checks the difficulty.
+- **Username:**
+  - The username only exists while you're signed in with Google; it hides your Google name, as in Mythriven.
+  - Not signed in, you type a name when you send a score, and that device remembers it.
+- **Art and tests:**
+  - New original pixel art for the enemies, hearts, ammo, power-ups, levers and switches.
+  - New tests: a solver that plays 40 caves to prove they're beatable, combat and puzzle rules with real physics, and the touch buttons never overlapping.
+  - The leaderboard tests now cover the per-difficulty boards.
+
+### Reason
+The owner asked for all the combat, danger, puzzle and power-up features from the GemScout spec: three difficulties that set hearts and how the blaster works, the five proposed enemies, the default hazards and puzzles, and all four power-ups. The owner also asked that the username only appear while signed in to Google, to hide the Google name.
+
 ## Version 00.01.01
 Date: 11/06/2026
 Time: 12:12 AM

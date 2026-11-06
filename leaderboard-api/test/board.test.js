@@ -7,6 +7,7 @@ import {
   MAX_MAP_BYTES,
   addEntry,
   computeScore,
+  countEntries,
   emptyBoard,
   normalizeBoard,
   qualifies,
@@ -55,6 +56,7 @@ function png(width, height, extraBytes = 0) {
 function score(overrides = {}) {
   return {
     name: "Ari",
+    difficulty: "medium",
     seed: "123456789",
     gen: 1,
     gems: 12,
@@ -92,6 +94,8 @@ test("impossible or malformed clears are refused", () => {
   assert.equal(validateScore(score({ gen: 0 })).error, "invalid gen");
   assert.equal(validateScore(score({ no_damage: "yes" })).error, "invalid no_damage");
   assert.equal(validateScore(score({ version: "1.0" })).error, "invalid version");
+  assert.equal(validateScore(score({ difficulty: "nightmare" })).error, "invalid difficulty");
+  assert.equal(validateScore(score({ difficulty: undefined })).error, "invalid difficulty");
   assert.equal(validateScore([]).error, "invalid json");
 });
 
@@ -109,10 +113,24 @@ test("the map picture must be a small real PNG; it's optional", () => {
 test("highest score ranks first, then the fastest", () => {
   const slow = { ...validateScore(score({ name: "Slow" })).entry, date: "2026-11-06T00:00:00Z" };
   const best = { ...validateScore(score({ name: "Best", gems: 20, time_ms: 100_000 })).entry, date: "2026-11-06T00:00:01Z" };
-  const board = normalizeBoard({ entries: [slow, best] });
-  assert.deepEqual(board.entries.map((e) => e.name), ["Best", "Slow"]);
+  const board = normalizeBoard({ boards: { medium: [slow, best] } });
+  assert.deepEqual(board.boards.medium.map((e) => e.name), ["Best", "Slow"]);
   const tieFast = { ...slow, name: "Fast", time_ms: slow.time_ms - 500 };
-  assert.equal(normalizeBoard({ entries: [slow, tieFast] }).entries[0].name, "Fast", "same score: faster wins");
+  assert.equal(normalizeBoard({ boards: { medium: [slow, tieFast] } }).boards.medium[0].name, "Fast", "same score: faster wins");
+});
+
+test("each difficulty has its own board", () => {
+  let board = emptyBoard();
+  board = addEntry(board, validateScore(score({ name: "E", difficulty: "easy" })).entry, "2026-11-06T00:00:00Z");
+  board = addEntry(board, validateScore(score({ name: "H", difficulty: "hard" })).entry, "2026-11-06T00:00:01Z");
+  assert.deepEqual(board.boards.easy.map((e) => e.name), ["E"]);
+  assert.deepEqual(board.boards.hard.map((e) => e.name), ["H"]);
+  assert.equal(board.boards.medium.length, 0);
+  assert.equal(countEntries(board), 2);
+  // A row stored on the wrong board goes back to its own.
+  const fixed = normalizeBoard({ boards: { easy: [{ ...board.boards.hard[0] }] } });
+  assert.equal(fixed.boards.hard.length, 1);
+  assert.equal(fixed.boards.easy.length, 0);
 });
 
 test("the board keeps only the best entries", () => {
@@ -120,14 +138,14 @@ test("the board keeps only the best entries", () => {
   for (let i = 0; i < MAX_ENTRIES + 5; i++) {
     board = addEntry(board, validateScore(score({ name: `P${i}`, gems: 5 + i, time_ms: 300_000 })).entry, "2026-11-06T00:00:00Z");
   }
-  assert.equal(board.entries.length, MAX_ENTRIES);
+  assert.equal(board.boards.medium.length, MAX_ENTRIES);
   assert.equal(qualifies(board, validateScore(score({ gems: 1, time_ms: 300_000, no_damage: false })).entry), false);
 });
 
 test("hand-edited junk in the stored file is dropped", () => {
-  const board = normalizeBoard({ entries: [{ name: "x" }, "junk", { ...score(), date: "not a date" }] });
-  assert.equal(board.entries.length, 1);
-  assert.equal(board.entries[0].date, "");
+  const board = normalizeBoard({ boards: { medium: [{ name: "x" }, "junk", { ...score(), date: "not a date" }] }, entries: "old" });
+  assert.equal(countEntries(board), 1);
+  assert.equal(board.boards.medium[0].date, "");
 });
 
 /** A stand-in Workers KV that remembers puts. */
@@ -208,8 +226,9 @@ test("later scores are written to the data branch and a double submit is ignored
     const again = await (await worker.fetch(post(score()), env)).json();
     assert.equal(again.accepted, false);
     const board = await (await worker.fetch(new Request("https://w.example/leaderboard"), env)).json();
-    assert.equal(board.entries.length, 1);
-    assert.equal(board.entries[0].map, score().map, "the picture is kept with the score");
+    assert.equal(board.boards.medium.length, 1);
+    assert.equal(board.boards.medium[0].map, score().map, "the picture is kept with the score");
+    assert.equal(board.boards.medium[0].difficulty, "medium");
   });
 });
 

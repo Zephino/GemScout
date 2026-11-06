@@ -3,8 +3,12 @@
  * sorted, and how many rows it keeps. No network code here, so it can be
  * tested with `npm test`.
  *
+ * There is one board per difficulty (easy, medium, hard), best 50 each:
+ *   { _about, updated, boards: { easy: [...], medium: [...], hard: [...] } }
+ *
  * One row is one cleared cave:
  *   name       player-chosen, letters/numbers/space/_/- only, up to 12
+ *   difficulty "easy", "medium" or "hard" (which board it's on)
  *   seed       the cave's seed (a whole number, 0 to 4294967295, sent as text)
  *   gen        cave generator version (a different gen draws a different cave)
  *   gems       gems collected (every gem in the cave)
@@ -21,6 +25,7 @@
  */
 
 export const MAX_ENTRIES = 50;
+export const DIFFICULTIES = Object.freeze(["easy", "medium", "hard"]);
 export const MAX_NAME_LENGTH = 12;
 export const MIN_GEMS = 1;
 export const MAX_GEMS = 200;
@@ -124,6 +129,8 @@ export function validateScore(body) {
   if (looksLikeInjection(body.name)) return { error: "invalid name" };
   const name = sanitizeName(body.name);
   if (!name) return { error: "invalid name" };
+  const difficulty = String(body.difficulty ?? "");
+  if (!DIFFICULTIES.includes(difficulty)) return { error: "invalid difficulty" };
   const seed = normalizeSeed(body.seed);
   if (seed === null) return { error: "invalid seed" };
   const gen = wholeNumber(body.gen, 1, MAX_GEN);
@@ -139,7 +146,7 @@ export function validateScore(body) {
   const version = String(body.version ?? "");
   if (!VERSION_PATTERN.test(version)) return { error: "invalid version" };
   const score = computeScore(gems, time_ms, no_damage);
-  return { entry: { name, score, seed, gen, gems, time_ms, no_damage, map, version } };
+  return { entry: { name, difficulty, score, seed, gen, gems, time_ms, no_damage, map, version } };
 }
 
 /** Highest score first, then fastest, then earliest. */
@@ -152,43 +159,58 @@ export function compareEntries(a, b) {
 }
 
 /** The same clear sent twice (for example a double tap on Submit). */
-export function isDuplicate(entries, entry) {
-  return entries.some(
+export function isDuplicate(board, entry) {
+  return board.boards[entry.difficulty].some(
     (e) => e.name === entry.name && e.seed === entry.seed && e.gen === entry.gen && e.time_ms === entry.time_ms && e.gems === entry.gems,
   );
 }
 
+function emptyBoards() {
+  return { easy: [], medium: [], hard: [] };
+}
+
 /** Rebuilds a board from stored data, dropping anything malformed. */
 export function normalizeBoard(raw) {
-  const entries = [];
-  for (const item of Array.isArray(raw?.entries) ? raw.entries : []) {
+  const boards = emptyBoards();
+  const items = [];
+  for (const d of DIFFICULTIES) {
+    for (const item of Array.isArray(raw?.boards?.[d]) ? raw.boards[d] : []) items.push(item);
+  }
+  for (const item of items) {
     const checked = validateScore(item);
     if (!checked.entry) continue;
     const date = String(item.date ?? "");
     checked.entry.date = /^\d{4}-\d{2}-\d{2}T[\d:.]+Z$/.test(date) ? date : "";
-    entries.push(checked.entry);
+    boards[checked.entry.difficulty].push(checked.entry);
   }
-  entries.sort(compareEntries);
-  return {
-    _about: ABOUT,
-    updated: typeof raw?.updated === "string" ? raw.updated : "",
-    entries: entries.slice(0, MAX_ENTRIES),
-  };
+  for (const d of DIFFICULTIES) {
+    boards[d].sort(compareEntries);
+    boards[d] = boards[d].slice(0, MAX_ENTRIES);
+  }
+  return { _about: ABOUT, updated: typeof raw?.updated === "string" ? raw.updated : "", boards };
 }
 
-/** True when `entry` would make the board (it isn't full, or beats the last row). */
+/** True when `entry` would make its board (it isn't full, or beats the last row). */
 export function qualifies(board, entry) {
-  if (board.entries.length < MAX_ENTRIES) return true;
-  return compareEntries(entry, board.entries[board.entries.length - 1]) < 0;
+  const rows = board.boards[entry.difficulty];
+  if (rows.length < MAX_ENTRIES) return true;
+  return compareEntries(entry, rows[rows.length - 1]) < 0;
 }
 
-/** Adds `entry` (with its date) and returns the new board. */
+/** Adds `entry` (with its date) to its board and returns the new board. */
 export function addEntry(board, entry, nowIso) {
-  const entries = [...board.entries, { ...entry, date: nowIso }];
-  entries.sort(compareEntries);
-  return { _about: ABOUT, updated: nowIso, entries: entries.slice(0, MAX_ENTRIES) };
+  const boards = { ...board.boards };
+  const rows = [...boards[entry.difficulty], { ...entry, date: nowIso }];
+  rows.sort(compareEntries);
+  boards[entry.difficulty] = rows.slice(0, MAX_ENTRIES);
+  return { _about: ABOUT, updated: nowIso, boards };
+}
+
+/** How many rows in all boards together. */
+export function countEntries(board) {
+  return DIFFICULTIES.reduce((n, d) => n + board.boards[d].length, 0);
 }
 
 export function emptyBoard() {
-  return { _about: ABOUT, updated: "", entries: [] };
+  return { _about: ABOUT, updated: "", boards: emptyBoards() };
 }

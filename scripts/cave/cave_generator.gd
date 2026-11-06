@@ -11,7 +11,8 @@ extends RefCounted
 ##
 ## Steps: plan every floor (random walk, flat chambers, flat shaft bottoms),
 ## limit steps to 2 cells, carve, add ledges and decorations, then check the
-## result with Reachability. If any spot the scout can reach can't get back
+## result with Reachability, then add doors, beams, spikes, enemies and
+## pickups (CaveFeatures, which checks they're fair). If any spot the scout can reach can't get back
 ## to the start, or there aren't enough spots for gems, the next try (same
 ## seed, attempt + 1) is used. Gems and the exit are only put on spots the
 ## scout can reach and come back from.
@@ -19,7 +20,7 @@ extends RefCounted
 ## Change VERSION whenever a change here would draw a different cave for the
 ## same seed (old leaderboard seeds then show "made with an older version").
 
-const VERSION := 1
+const VERSION := 2
 const WIDTH := 144
 const HEIGHT := 72
 const TIERS := 3
@@ -99,6 +100,13 @@ func _try(seed: int, attempt: int, plain: bool = false) -> CaveData:
 		return null
 	_cave.gems = _pick_gems(result.safe)
 	if _cave.gems.size() < MIN_GEMS and not plain:
+		return null
+	if plain:
+		for c in result.safe:
+			_cave.safe[c] = true
+		return _cave
+	# Dangers, puzzles and pickups (CaveFeatures checks they're fair).
+	if not CaveFeatures.new(_cave, _rng).place():
 		return null
 	return _cave
 

@@ -16,6 +16,10 @@ func test_cave_can_be_cleared() -> void:
 		level.build(seed)
 		var cleared: Array = []
 		level.cleared.connect(func(r: Dictionary) -> void: cleared.append(r))
+		# This test is about standing on every gem spot, so nothing may knock
+		# the scout away (enemies frozen, the scout unhurtable).
+		level.freeze_left = 1e9
+		level.hero.invulnerable_left = 1e9
 		await _frames(30)
 		check(level.hero.is_on_floor(), "seed %d: the scout lands at the start" % seed)
 		var start_feet: Vector2 = CaveData.feet_position(level.cave.start)
@@ -49,21 +53,28 @@ func test_cave_can_be_cleared() -> void:
 
 
 func test_jumping_reaches_a_ledge_height() -> void:
-	# Hold jump from flat ground: the scout must rise well above the
-	# 5-cell climbs the generator plans for (Reachability.JUMP_UP).
-	var level := CaveLevel.new()
-	tree.root.add_child(level)
-	level.build(11)
+	# Hold jump on a flat floor with nothing above: the scout must rise well
+	# above the 5-cell climbs the generator plans for (Reachability.JUMP_UP).
+	var arena := Node2D.new()
+	tree.root.add_child(arena)
+	var floor_body := StaticBody2D.new()
+	var floor_shape := CollisionShape2D.new()
+	floor_shape.shape = WorldBoundaryShape2D.new()
+	floor_body.add_child(floor_shape)
+	arena.add_child(floor_body)
+	var hero := Hero.new()
+	arena.add_child(hero)
+	hero.place(Vector2.ZERO)
 	await _frames(20)
-	var start_y: float = level.hero.position.y
+	var start_y: float = hero.position.y
 	var best: float = 0.0
 	Input.action_press("jump")
 	for i in 40:
 		await tree.physics_frame
-		best = maxf(best, start_y - level.hero.position.y)
+		best = maxf(best, start_y - hero.position.y)
 	Input.action_release("jump")
 	check(best > (Reachability.JUMP_UP + 1) * CaveData.CELL_SIZE, "a full jump rises %.0f px (needs more than %d)" % [best, (Reachability.JUMP_UP + 1) * CaveData.CELL_SIZE])
-	level.queue_free()
+	arena.queue_free()
 	await _frames(2)
 
 
