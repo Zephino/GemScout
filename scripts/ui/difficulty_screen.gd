@@ -8,6 +8,7 @@ var root: Control
 func _init(on_pick: Callable, on_back: Callable) -> void:
 	var parts: Array = UiKit.screen("Choose difficulty", 420)
 	root = parts[0]
+	UiKit.keep_alive(root, self)
 	var column: VBoxContainer = parts[1]
 	var last: String = Difficulty.valid(Save.setting("difficulty"))
 	var first: Button = null

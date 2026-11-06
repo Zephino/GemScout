@@ -9,6 +9,7 @@ var root: Control
 func _init(seed: int, on_resume: Callable, on_restart: Callable, on_leave: Callable) -> void:
 	var parts: Array = UiKit.screen("Paused", 360)
 	root = parts[0]
+	UiKit.keep_alive(root, self)
 	var column: VBoxContainer = parts[1]
 	column.add_child(UiKit.button("Resume", func() -> void: on_resume.call()))
 	column.add_child(UiKit.button("Restart cave", func() -> void: on_restart.call()))

@@ -131,6 +131,15 @@ static func screen(title: String, max_width: float = 460.0) -> Array:
 	return [root, column]
 
 
+## Screens are built by small helper objects (ResultsScreen, SettingsScreen…)
+## and only their `root` is put on screen. The helper must live as long as
+## the screen, or its buttons silently stop working (Godot drops the
+## connections of a freed object; this was the "Send score does nothing"
+## bug). Keeping it on the root ties their lives together.
+static func keep_alive(root: Control, helper: RefCounted) -> void:
+	root.set_meta("screen_helper", helper)
+
+
 ## Focus the first button so keyboards and controllers can use the menu.
 static func focus_first(node: Node) -> void:
 	for child in node.find_children("*", "Button", true, false):

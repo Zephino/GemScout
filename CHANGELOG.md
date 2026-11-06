@@ -2,6 +2,24 @@
 
 One entry per change request, newest first (see `.cursor/rules/changelog.mdc`). The version here always matches `VERSION`. Times are US Eastern.
 
+## Version 00.01.03
+Date: 11/06/2026
+Time: 1:08 AM
+
+### Changes
+- **Fixed: "Send score" did nothing.** Each screen's buttons are run by a small helper object, but only the visible part of the screen was kept. The helper was freed as soon as the screen appeared, and Godot then quietly dropped its button connections.
+  - The same bug also broke **Send** on Suggest a feature and **Save** for the username in Settings.
+  - Each screen now keeps its helper alive (`UiKit.keep_alive`), so all of these buttons work again.
+- **Fixed:** the results screen's point values no longer wrap one digit per line. They made the screen much longer and pushed the send button and its message out of view.
+- **New test** (`tests/test_screen_buttons.gd`):
+  - Builds every screen the way the game does and checks that every button is still connected.
+  - Presses Send score and checks that it responds.
+  - It fails without the fix and passes with it.
+- Checked in a browser: clicking Send score now sends the score, including the map picture, to the Worker.
+
+### Reason
+The owner reported that nothing happened when pressing Send score on the results screen.
+
 ## Version 00.01.02
 Date: 11/06/2026
 Time: 12:48 AM

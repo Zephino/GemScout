@@ -21,6 +21,7 @@ func _init(on_close: Callable, on_play: Callable, start_tab: String = "medium") 
 	_shown = Difficulty.valid(start_tab)
 	var parts: Array = UiKit.screen("Leaderboard", 600)
 	root = parts[0]
+	UiKit.keep_alive(root, self)
 	_column = parts[1]
 	var tabs := HBoxContainer.new()
 	tabs.alignment = BoxContainer.ALIGNMENT_CENTER

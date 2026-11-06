@@ -21,6 +21,7 @@ func _init(on_close: Callable) -> void:
 	_on_close = on_close
 	var parts: Array = UiKit.screen("Settings", 480)
 	root = parts[0]
+	UiKit.keep_alive(root, self)
 	_column = parts[1]
 	_build()
 	Cloud.status_changed.connect(_refresh_account)

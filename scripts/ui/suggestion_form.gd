@@ -20,6 +20,7 @@ func _init(on_close: Callable) -> void:
 	_on_close = on_close
 	var parts: Array = UiKit.screen("Suggest a feature", 480)
 	root = parts[0]
+	UiKit.keep_alive(root, self)
 	_column = parts[1]
 	_column.add_child(UiKit.label("Ideas and problems go straight to the developer. Please don't include personal information.", 14, UiKit.MUTED))
 	_category = OptionButton.new()

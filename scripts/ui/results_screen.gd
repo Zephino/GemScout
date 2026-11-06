@@ -15,6 +15,7 @@ func _init(result: Dictionary, on_new_cave: Callable, on_replay: Callable, on_me
 	_result = result
 	var parts: Array = UiKit.screen("Cave cleared!", 460)
 	root = parts[0]
+	UiKit.keep_alive(root, self)
 	_column = parts[1]
 	_column.add_child(UiKit.label(Difficulty.label(result["difficulty"]), 16, UiKit.MUTED))
 	var gems: int = result["gems"]
@@ -29,7 +30,8 @@ func _init(result: Dictionary, on_new_cave: Callable, on_replay: Callable, on_me
 		var a := UiKit.label(l[0], 16, UiKit.TEXT, HORIZONTAL_ALIGNMENT_LEFT)
 		a.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		row.add_child(a)
-		row.add_child(UiKit.label(str(l[1]), 16, UiKit.TEXT, HORIZONTAL_ALIGNMENT_RIGHT))
+		# Numbers never wrap (they used to break into one digit per line).
+		row.add_child(UiKit.label(str(l[1]), 16, UiKit.TEXT, HORIZONTAL_ALIGNMENT_RIGHT, false))
 		_column.add_child(row)
 	_column.add_child(UiKit.label("Score: %d" % result["score"], 26, UiKit.GOLD))
 	var map := TextureRect.new()
