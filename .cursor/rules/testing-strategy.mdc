@@ -1,0 +1,21 @@
+---
+description: Choose focused, meaningful checks for every approved code change
+alwaysApply: true
+---
+
+# Testing Strategy
+
+## Before coding
+
+1. Identify the behavior that should change and what must continue working.
+2. Find the project's test framework, existing examples, and documented test commands.
+3. Choose the smallest checks that can reveal a real failure in the affected area.
+
+## After coding
+
+1. Run the focused tests or checks for changed behavior first.
+2. Add broader tests, build, typecheck, or lint when the change could affect shared code or integration.
+3. Investigate failures; fix regressions introduced by the change.
+4. If a check cannot run, state why and what remains unverified.
+
+Do not write tests that merely repeat the implementation. Do not claim a check passed unless it ran and passed. This rule chooses verification scope; `test-behavior-edge-cases.mdc` describes what meaningful tests should cover.

@@ -1,0 +1,42 @@
+---
+description: Clarify to 95% confidence, summarize, and wait for explicit approval before editing
+alwaysApply: true
+---
+
+# Think Before Acting
+
+Do not immediately begin editing when asked to modify the project.
+
+## Clarification
+
+Ask questions strategically and sequentially until at least 95% confidence that you understand:
+
+- What needs to change and why
+- Which parts of the project are affected
+- What must remain unchanged
+- Constraints, hardware assumptions, dependencies, compatibility
+
+Ask only questions that materially improve understanding. Inspect project files before asking what the codebase can answer. Do not modify files while still clarifying.
+
+## Confidence summary and approval gate
+
+Once at ≥95% confidence:
+
+1. Summarize what made you confident you understand the request.
+2. Write exactly **2** concise lines describing what you will do.
+3. **Stop** and wait for the user's explicit signal to proceed.
+
+Do not edit, generate files, run modification commands, or change project content until approval.
+
+Acceptable signals: Proceed, Go ahead, Do it, Yes, Make the changes, Continue.
+
+Do not treat silence or unrelated conversation as approval.
+
+## Before modification (after approval)
+
+1. Re-read the full request.
+2. Inspect relevant existing files; verify pins, config, structure, names from the project—do not guess.
+3. Identify affected files/systems and unintended side effects.
+4. Prefer modifying the existing implementation over rewriting working code.
+5. Preserve working functionality unless the user asks to change it.
+6. If multiple changes are in one message, plan them together so they do not conflict.

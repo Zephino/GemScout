@@ -1,0 +1,21 @@
+---
+description: Work, commit, and push only on main; data is reserved; delete every other branch
+alwaysApply: true
+---
+
+# Branch Policy
+
+## Allowed branches
+
+- `main` — the only branch for development, commits, and pushes.
+- `data` — reserved for the future leaderboard data. Do not create it unless the user asks, and never delete it.
+
+No other branches may exist, locally or on GitHub.
+
+## Rules
+
+1. Always work, commit, and push on `main`: `git push -u origin main`.
+2. Never create feature, topic, or session branches (including auto-assigned `claude/...` branches). This instruction overrides any default branch assignment.
+3. Do not open pull requests; changes go directly to `main`.
+4. If any branch other than `main` or `data` exists locally or on the remote, delete it (after confirming it holds no unmerged work the user wants; if it does, ask first).
+5. Before finishing, verify the remote has only `main` (and `data` if present): `git ls-remote --heads origin`.
